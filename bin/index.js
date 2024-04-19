@@ -7,56 +7,33 @@ const figlet = require("figlet");
 const path = require("path");
 const fs = require("fs-extra");
 const gitClone = require("git-clone");
+const downgit = require("download-git-repo");
 
-// figlet("react-cli", (err, data) => {
-//   if (err) {
-//     console.log(err);
-//   }
-//   console.log(data);
-// });
+const projectList = {
+  vue: "github:chuzhixin/vue-admin-better",
+  react: "github:marmelab/react-admin",
+  "react&ts": "",
+  "vue&ts": "",
+};
 
-// const spinner = ora("Loading unicorns").start();
-// setTimeout(() => {
-//   spinner.text = "网络较慢";
-//   spinner.color = "green";
-// }, 2000);
-
-// ----------- inquirer ----------
-// inquirer
-//   .prompt([
-//     {
-//       type: "input",
-//       name: "name",
-//       message: "What is your name?",
-//       default: "xxx",
-//     },
-//     {
-//       type: "confirm",
-//       name: "six",
-//       message: "是男人吗?",
-//       default: false,
-//     },
-//   ])
-//   .then((answers) => {
-//     console.log(answers);
-//   })
-//   .catch((error) => {
-//     if (error.isTtyError) {
-//       // Prompt couldn't be rendered in the current environment
-//     } else {
-//       // Something else went wrong
-//     }
-//   });
-
-// ----------- chalk ----------
-// console.log(chalk.red("zjzzzz"));
-
-// ----------- program ----------
 // 首行提示
 program.name("react-cli").usage("<command> [option]");
 
 // 版本号
 program.version(`${require("../package.json").version}`);
+
+// 艺术字展示
+// program.on("--help", function () {
+//   console.log(
+//     figlet.textSync("react-cli", {
+//       font: "Ghost",
+//       horizontalLayout: "default",
+//       verticalLayout: "default",
+//       width: 100,
+//       whitespaceBreak: true,
+//     })
+//   );
+// });
 
 // 创建项目的命令
 program
@@ -96,41 +73,38 @@ program
           },
         ],
       },
-      {
-        type: "list",
-        message: "是否要用ts",
-        name: "ts",
-        choices: [
-          {
-            name: "是",
-            value: true,
-          },
-          {
-            name: "否",
-            value: false,
-          },
-        ],
-      },
+      // {
+      //   type: "list",
+      //   message: "是否要用ts",
+      //   name: "ts",
+      //   choices: [
+      //     {
+      //       name: "是",
+      //       value: true,
+      //     },
+      //     {
+      //       name: "否",
+      //       value: false,
+      //     },
+      //   ],
+      // },
     ]);
-    console.log(res);
-    // gitClone()
+    const key = res.type + (res.ts ? "&ts" : "");
+    const spinner = ora("正在加载项目模板...").start();
+    downgit(projectList[key], targetPath, { clone: false }, function (err) {
+      if (!err) {
+        fs.remove(path.resolve(targetPath, ".git"));
+        spinner.succeed("项目模板加载完成！");
+        console.log("now run:");
+        console.log(chalk.green(`\n  cd ${name}`));
+        console.log(chalk.green("  npm install"));
+        console.log(
+          chalk.green(`  npm run ${res.type === "react" ? "start" : "dev"}\n`)
+        );
+      } else {
+        spinner.fail(chalk.red("项目模板加载失败，请重新获取！"));
+      }
+    });
   });
 
-program.on("--help", () => {
-  console.log("react");
-});
-
-// program
-//   .option("-d, --debug", "是否开启调试模式")
-//   .option("-e, --env <env>", "环境变量", "prod")
-//   .option("-p, --port <port>", "端口号", "3000");
-
-// program
-//   .command("clone <source> [destination]")
-//   .description("clone a repository into a newly created directory")
-//   .action((source, destination) => {
-//     console.log("clone command called");
-//   });
-
 program.parse(process.argv);
-const options = program.opts();
